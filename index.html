@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DARK ROAST | Brewed in Motion</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- GSAP & Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <!-- FIX: Switched to unpkg and version 1.0.42 for correct browser global support -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        coffee: {
+                            black: '#050505',
+                            dark: '#0B0B0B',
+                            roast: '#2C1A0F',
+                            medium: '#4A3B32',
+                            gold: '#C7A17A',
+                            cream: '#E8DCCA',
+                            green: '#2D3A28' // Raw bean color
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Cinzel', 'serif'],
+                        serif: ['Playfair Display', 'serif'],
+                        body: ['Inter', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')",
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        body {
+            background-color: #050505;
+            color: #E8DCCA;
+            overflow-x: hidden;
+            cursor: none; /* Custom cursor */
+        }
+
+        /* Custom Cursor */
+        .cursor-dot,
+        .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #C7A17A;
+        }
+
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(199, 161, 122, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+
+        body:hover .cursor-outline {
+            opacity: 1;
+        }
+
+        /* Steam Animation */
+        .steam {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            filter: blur(20px);
+            opacity: 0;
+        }
+
+        /* Loader */
+        .loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-out;
+        }
+    </style>
+</head>
+<body class="relative">
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot hidden md:block"></div>
+    <div class="cursor-outline hidden md:block"></div>
+
+    <!-- Loading Screen -->
+    <div class="loader-overlay" id="loader">
+        <div class="text-center">
+            <h1 class="font-heading text-4xl md:text-6xl text-coffee-gold tracking-widest mb-4">DARK ROAST</h1>
+            <div class="h-1 w-0 bg-coffee-gold mx-auto" id="loader-bar"></div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 w-full z-50 px-6 py-6 mix-blend-difference text-white flex justify-between items-center opacity-0" id="nav">
+        <a href="#" class="font-heading text-xl tracking-widest font-bold">DR.</a>
+        <div class="hidden md:flex gap-8 font-body text-sm tracking-wide">
+            <a href="#origin" class="hover:text-coffee-gold transition-colors">Origin</a>
+            <a href="#roast" class="hover:text-coffee-gold transition-colors">Roast</a>
+            <a href="#brew" class="hover:text-coffee-gold transition-colors">Brew</a>
+            <a href="#shop" class="hover:text-coffee-gold transition-colors">Shop</a>
+        </div>
+        <button class="border border-white/30 px-6 py-2 rounded-full text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all">
+            My Cart (0)
+        </button>
+    </nav>
+
+    <!-- 1. HERO SECTION -->
+    <section class="relative h-screen flex items-center justify-center overflow-hidden" id="hero">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-black z-10"></div>
+            <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=2070&auto=format&fit=crop" 
+                 alt="Dark Coffee" 
+                 class="w-full h-full object-cover scale-110" id="hero-img">
+        </div>
+        
+        <div class="relative z-10 text-center px-4">
+            <p class="text-coffee-gold font-body tracking-[0.3em] text-xs md:text-sm mb-4 opacity-0 hero-text">EST. 2024</p>
+            <h1 class="font-heading text-6xl md:text-9xl text-white mb-2 opacity-0 hero-text">DARK ROAST</h1>
+            <p class="font-serif italic text-xl md:text-3xl text-white/80 opacity-0 hero-text">Brewed in Motion</p>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 text-xs flex flex-col items-center gap-2 opacity-0 hero-text">
+            <span>SCROLL TO BREW</span>
+            <div class="w-[1px] h-12 bg-gradient-to-b from-white to-transparent"></div>
+        </div>
+    </section>
+
+    <!-- 2. ORIGIN (Horizontal Scroll) -->
+    <section id="origin-container" class="relative bg-coffee-black overflow-hidden h-screen">
+        <div class="absolute top-10 left-10 z-20">
+             <h2 class="font-heading text-4xl text-coffee-cream">THE ORIGIN</h2>
+             <p class="text-coffee-gold font-serif italic">From bean to soul</p>
+        </div>
+        
+        <div id="origin-track" class="flex h-full w-[300vw]">
+            <!-- Panel 1: The Farm -->
+            <div class="w-screen h-full flex-shrink-0 relative flex items-center justify-center border-r border-white/5">
+                <div class="absolute inset-0">
+                     <img src="https://images.unsplash.com/photo-1524350876685-274059332603?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover opacity-40">
+                </div>
+                <div class="relative z-10 max-w-xl p-8">
+                    <h3 class="font-serif text-5xl md:text-7xl mb-6">Ethiopian Highlands</h3>
+                    <p class="font-body text-gray-400 leading-relaxed">Grown at 2,000 meters above sea level, our beans absorb the mist and the ancient soil. Every cherry is hand-picked at peak ripeness.</p>
+                </div>
+            </div>
+
+            <!-- Panel 2: The Process -->
+            <div class="w-screen h-full flex-shrink-0 relative flex items-center justify-center border-r border-white/5 bg-coffee-green transition-colors duration-1000" id="raw-bean-panel">
+                <div class="absolute inset-0">
+                     <img src="https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?q=80&w=1964&auto=format&fit=crop" class="w-full h-full object-cover opacity-30">
+                </div>
+                <div class="relative z-10 max-w-xl p-8 text-right ml-auto mr-12 md:mr-32">
+                    <h3 class="font-serif text-5xl md:text-7xl mb-6">Sun Dried</h3>
+                    <p class="font-body text-gray-300 leading-relaxed">30 days under the African sun. The natural process allows the fruit sugars to ferment into the bean, creating a complex, wine-like body.</p>
+                </div>
+            </div>
+
+            <!-- Panel 3: The Selection -->
+            <div class="w-screen h-full flex-shrink-0 relative flex items-center justify-center">
+                <div class="absolute inset-0">
+                     <img src="https://images.unsplash.com/photo-1621255535312-d812d622f981?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover opacity-40">
+                </div>
+                <div class="relative z-10 text-center">
+                    <h3 class="font-heading text-6xl md:text-8xl mb-4 text-white">THE RAW<br><span class="text-coffee-gold italic font-serif">POTENTIAL</span></h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. THE ROAST (Stacked Cards) -->
+    <section id="roast" class="relative py-24 px-6 md:px-20 bg-coffee-black transition-colors duration-1000 ease-in-out">
+        <div class="sticky top-10 mb-20 z-10 mix-blend-difference">
+            <h2 class="font-heading text-4xl md:text-6xl text-white">THE ROAST</h2>
+            <div class="w-24 h-1 bg-coffee-gold mt-4"></div>
+        </div>
+
+        <div class="max-w-6xl mx-auto relative space-y-32">
+            <!-- Card 1 -->
+            <div class="roast-card sticky top-32 min-h-[60vh] bg-[#1a1a1a] border border-white/10 rounded-sm p-8 md:p-12 flex flex-col md:flex-row gap-10 overflow-hidden group">
+                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1587393855524-087f83d95bc9?q=80&w=2000&auto=format&fit=crop')] opacity-10 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                <div class="md:w-1/2 relative z-10 flex flex-col justify-center">
+                    <span class="text-coffee-gold font-mono text-sm mb-4">PHASE 01 — 200°C</span>
+                    <h3 class="font-serif text-4xl md:text-5xl mb-6">First Crack</h3>
+                    <p class="font-body text-gray-400">The beans expand and crack open like popcorn. The grassy aroma transforms into toasted grain.</p>
+                </div>
+                <div class="md:w-1/2 relative z-10 flex items-center justify-center">
+                    <i data-lucide="thermometer" class="w-24 h-24 text-coffee-gold opacity-50"></i>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="roast-card sticky top-40 min-h-[60vh] bg-[#24150d] border border-white/10 rounded-sm p-8 md:p-12 flex flex-col md:flex-row gap-10 overflow-hidden group">
+                 <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1610632380989-680fe40816c6?q=80&w=2000&auto=format&fit=crop')] opacity-10 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                <div class="md:w-1/2 relative z-10 flex flex-col justify-center">
+                    <span class="text-coffee-gold font-mono text-sm mb-4">PHASE 02 — 215°C</span>
+                    <h3 class="font-serif text-4xl md:text-5xl mb-6">Maillard Reaction</h3>
+                    <p class="font-body text-gray-400">Sugars caramelize. The color deepens to a rich brown. The true character of the origin begins to shine.</p>
+                </div>
+                 <div class="md:w-1/2 relative z-10 flex items-center justify-center">
+                    <i data-lucide="flame" class="w-24 h-24 text-orange-600 opacity-50"></i>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="roast-card sticky top-48 min-h-[60vh] bg-[#000000] border border-gray-800 rounded-sm p-8 md:p-12 flex flex-col md:flex-row gap-10 overflow-hidden group">
+                 <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1974&auto=format&fit=crop')] opacity-20 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                <div class="md:w-1/2 relative z-10 flex flex-col justify-center">
+                    <span class="text-coffee-gold font-mono text-sm mb-4">PHASE 03 — 225°C</span>
+                    <h3 class="font-serif text-4xl md:text-5xl mb-6 text-white">The Drop</h3>
+                    <p class="font-body text-gray-400">Precision timing. We drop the beans into the cooling tray exactly when the smoky, chocolate notes peak.</p>
+                </div>
+                 <div class="md:w-1/2 relative z-10 flex items-center justify-center">
+                    <i data-lucide="wind" class="w-24 h-24 text-blue-300 opacity-30"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. FLAVOR WHEEL (Interactive) -->
+    <section id="flavor" class="h-screen flex flex-col items-center justify-center relative overflow-hidden bg-coffee-black">
+        <!-- Spinning Background SVG -->
+        <div class="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+             <svg id="flavor-spinner" class="w-[150vmax] h-[150vmax]" viewBox="0 0 100 100">
+                <path id="curve" fill="none" d="M 10, 50 A 40,40 0 1,1 90, 50 A 40,40 0 1,1 10, 50" />
+                <text class="text-[3px] font-heading fill-white tracking-[1px]">
+                    <textPath href="#curve">
+                        CITRUS • DARK CHOCOLATE • BERGAMOT • TOASTED ALMOND • SMOKE • CITRUS • DARK CHOCOLATE • BERGAMOT •
+                    </textPath>
+                </text>
+            </svg>
+        </div>
+
+        <div class="z-10 text-center relative">
+            <p class="text-coffee-gold font-mono mb-4">TASTE PROFILE</p>
+            <h2 class="font-heading text-6xl md:text-8xl mix-blend-exclusion">COMPLEX<br>& BOLD</h2>
+            <div class="mt-12 flex flex-wrap justify-center gap-4">
+                <span class="px-6 py-2 border border-white/20 rounded-full font-body text-sm hover:bg-white hover:text-black transition-colors cursor-none">Black Cherry</span>
+                <span class="px-6 py-2 border border-white/20 rounded-full font-body text-sm hover:bg-white hover:text-black transition-colors cursor-none">Molasses</span>
+                <span class="px-6 py-2 border border-white/20 rounded-full font-body text-sm hover:bg-white hover:text-black transition-colors cursor-none">Velvet Body</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. THE BREW (Liquid Animation) -->
+    <section id="brew" class="min-h-[150vh] relative bg-coffee-black flex justify-center">
+        <!-- The Stream -->
+        <div class="absolute top-0 w-2 md:w-4 bg-gradient-to-b from-[#2C1A0F] to-[#000] z-20 origin-top" id="liquid-stream" style="height: 0%;"></div>
+
+        <div class="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
+            <div class="absolute inset-0 bg-black/80 z-10"></div>
+            <img src="https://images.unsplash.com/photo-1544983088-774b7a188f4e?q=80&w=1962&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover">
+            
+            <div class="relative z-30 text-center mix-blend-overlay">
+                <h2 class="font-heading text-[12vw] leading-none text-white opacity-20">POUR</h2>
+                <h2 class="font-heading text-[12vw] leading-none text-white opacity-20">OVER</h2>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-20 z-30 w-full text-center">
+            <p class="text-white/60 font-serif italic text-2xl">Precision in every drop.</p>
+        </div>
+    </section>
+
+    <!-- 6. PRODUCTS -->
+    <section id="shop" class="py-32 px-6 bg-[#050505]">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="font-heading text-4xl mb-16 text-center">CURRENT ROASTS</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Product 1 -->
+                <div class="group relative aspect-[3/4] bg-[#0e0e0e] overflow-hidden cursor-none">
+                    <div class="absolute inset-0 flex items-center justify-center p-10 transition-transform duration-500 group-hover:scale-105">
+                        <img src="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=2070&auto=format&fit=crop" class="object-contain w-full h-full grayscale group-hover:grayscale-0 transition-all duration-500">
+                    </div>
+                    <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 class="font-serif text-2xl text-white">Midnight Blend</h3>
+                        <p class="font-mono text-coffee-gold text-sm">$24.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="group relative aspect-[3/4] bg-[#0e0e0e] overflow-hidden cursor-none">
+                    <div class="absolute inset-0 flex items-center justify-center p-10 transition-transform duration-500 group-hover:scale-105">
+                        <img src="https://plus.unsplash.com/premium_photo-1675716443562-b771d72a3da7?q=80&w=1974&auto=format&fit=crop" class="object-contain w-full h-full grayscale group-hover:grayscale-0 transition-all duration-500">
+                    </div>
+                    <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 class="font-serif text-2xl text-white">Ethiopian Yirgacheffe</h3>
+                        <p class="font-mono text-coffee-gold text-sm">$28.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="group relative aspect-[3/4] bg-[#0e0e0e] overflow-hidden cursor-none">
+                    <div class="absolute inset-0 flex items-center justify-center p-10 transition-transform duration-500 group-hover:scale-105">
+                        <img src="https://images.unsplash.com/photo-1610632380989-680fe40816c6?q=80&w=2000&auto=format&fit=crop" class="object-contain w-full h-full grayscale group-hover:grayscale-0 transition-all duration-500">
+                    </div>
+                    <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <h3 class="font-serif text-2xl text-white">Espresso No. 9</h3>
+                        <p class="font-mono text-coffee-gold text-sm">$22.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. FOOTER CTA -->
+    <section class="h-[80vh] flex flex-col items-center justify-center bg-coffee-black relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+             <video autoplay loop muted playsinline class="w-full h-full object-cover">
+                 <!-- Using an image as fallback for video since simple file -->
+                 <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1974&auto=format&fit=crop" class="w-full h-full object-cover">
+             </video>
+        </div>
+
+        <div class="z-10 text-center">
+            <h2 class="font-heading text-6xl md:text-9xl mb-8 hover:text-coffee-gold transition-colors duration-500 cursor-none">TAKE A SIP</h2>
+            <button class="bg-coffee-gold text-black px-12 py-4 font-bold tracking-widest hover:bg-white transition-colors duration-300 rounded-sm">
+                ORDER NOW
+            </button>
+        </div>
+
+        <footer class="absolute bottom-10 w-full px-10 flex justify-between text-white/30 font-mono text-xs">
+            <div>&copy; 2024 DARK ROAST CO.</div>
+            <div class="flex gap-4">
+                <a href="#" class="hover:text-white">INSTAGRAM</a>
+                <a href="#" class="hover:text-white">TWITTER</a>
+            </div>
+        </footer>
+    </section>
+
+    <!-- Script Logic -->
+    <script>
+        // Wait for window to load to ensure Lenis and GSAP are available
+        window.addEventListener('load', () => {
+            
+            // 1. Initialize Lenis (Smooth Scrolling) if loaded
+            if (typeof Lenis !== 'undefined') {
+                const lenis = new Lenis({
+                    duration: 1.2,
+                    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                    direction: 'vertical',
+                    gestureDirection: 'vertical',
+                    smooth: true,
+                    mouseMultiplier: 1,
+                    smoothTouch: false,
+                    touchMultiplier: 2,
+                });
+
+                function raf(time) {
+                    lenis.raf(time);
+                    requestAnimationFrame(raf);
+                }
+                requestAnimationFrame(raf);
+            } else {
+                console.warn('Lenis Smooth Scroll library failed to load.');
+            }
+
+            // Register ScrollTrigger if available
+            if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                gsap.registerPlugin(ScrollTrigger);
+                initSiteAnimations();
+            } else {
+                console.error('GSAP or ScrollTrigger failed to load.');
+            }
+        });
+
+        // 2. Custom Cursor Logic
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+
+        window.addEventListener('mousemove', (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+
+            // Dot follows instantly
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+
+            // Outline follows with delay (using GSAP for smoothness)
+            if (typeof gsap !== 'undefined') {
+                gsap.to(cursorOutline, {
+                    x: posX,
+                    y: posY,
+                    duration: 0.15,
+                    ease: "power2.out"
+                });
+            }
+        });
+
+        // Hover effects for cursor
+        const hoverTargets = document.querySelectorAll('a, button, .roast-card');
+        hoverTargets.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                if (typeof gsap !== 'undefined') {
+                    gsap.to(cursorOutline, { scale: 2, backgroundColor: 'rgba(199, 161, 122, 0.1)', border: 'none' });
+                }
+            });
+            el.addEventListener('mouseleave', () => {
+                if (typeof gsap !== 'undefined') {
+                    gsap.to(cursorOutline, { scale: 1, backgroundColor: 'transparent', border: '1px solid rgba(199, 161, 122, 0.5)' });
+                }
+            });
+        });
+
+        function initSiteAnimations() {
+            // Loader Animation
+            const loaderBar = document.getElementById('loader-bar');
+            const loader = document.getElementById('loader');
+            
+            // Animate loader bar
+            gsap.to(loaderBar, {
+                width: '100px',
+                duration: 1,
+                ease: 'power2.inOut',
+                onComplete: () => {
+                    // Fade out loader
+                    gsap.to(loader, {
+                        opacity: 0,
+                        duration: 0.8,
+                        pointerEvents: 'none',
+                        onComplete: () => {
+                            startScrollAnimations();
+                        }
+                    });
+                }
+            });
+        }
+
+        function startScrollAnimations() {
+            // Navbar Fade In
+            gsap.to("#nav", { opacity: 1, duration: 1, delay: 0.5 });
+
+            // Hero Text Stagger
+            gsap.to(".hero-text", {
+                opacity: 1,
+                y: 0,
+                duration: 1.5,
+                stagger: 0.2,
+                ease: "power3.out"
+            });
+
+            // Hero Image Parallax
+            gsap.to("#hero-img", {
+                yPercent: 20,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: "#hero",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+
+            // 4. Horizontal Scroll (Origin)
+            let originSection = document.getElementById("origin-container");
+            let originTrack = document.getElementById("origin-track");
+            
+            gsap.to(originTrack, {
+                x: () => -(originTrack.scrollWidth - window.innerWidth),
+                ease: "none",
+                scrollTrigger: {
+                    trigger: originSection,
+                    pin: true,
+                    scrub: 1,
+                    end: () => "+=" + originTrack.scrollWidth,
+                    // Dynamic background color change during horizontal scroll
+                    onUpdate: (self) => {
+                        // Rough calculation to switch color when reaching the 2nd panel
+                        if(self.progress > 0.3 && self.progress < 0.6) {
+                            gsap.to("body", { backgroundColor: "#2D3A28", duration: 1 }); // Green
+                        } else if (self.progress > 0.6) {
+                            gsap.to("body", { backgroundColor: "#050505", duration: 1 }); // Back to black
+                        }
+                    }
+                }
+            });
+
+            // 5. Roast Section - Color & Card Stacking
+            // Background turns to Roast Brown when entering
+            ScrollTrigger.create({
+                trigger: "#roast",
+                start: "top center",
+                end: "bottom center",
+                onEnter: () => gsap.to("body", { backgroundColor: "#1a0f0a", duration: 1 }),
+                onLeaveBack: () => gsap.to("body", { backgroundColor: "#050505", duration: 1 }),
+                onLeave: () => gsap.to("body", { backgroundColor: "#050505", duration: 1 }), 
+                onEnterBack: () => gsap.to("body", { backgroundColor: "#1a0f0a", duration: 1 }), 
+            });
+
+            // Card Animations
+            const cards = document.querySelectorAll('.roast-card');
+            cards.forEach((card, index) => {
+                gsap.from(card, {
+                    y: 100,
+                    opacity: 0,
+                    duration: 1,
+                    scrollTrigger: {
+                        trigger: card,
+                        start: "top 80%",
+                        end: "top 20%",
+                        toggleActions: "play none none reverse"
+                    }
+                });
+            });
+
+            // 6. Flavor Wheel Rotation
+            gsap.to("#flavor-spinner", {
+                rotation: 360,
+                duration: 20,
+                repeat: -1,
+                ease: "none"
+            });
+
+            gsap.to("#flavor-spinner", {
+                scale: 1.5,
+                scrollTrigger: {
+                    trigger: "#flavor",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: 1
+                }
+            });
+
+            // 7. The Brew - Liquid Stream
+            gsap.to("#liquid-stream", {
+                height: "100%",
+                ease: "none",
+                scrollTrigger: {
+                    trigger: "#brew",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 0
+                }
+            });
+            
+            // Products Entry
+            gsap.from("#shop .group", {
+                y: 100,
+                opacity: 0,
+                stagger: 0.2,
+                duration: 1,
+                scrollTrigger: {
+                    trigger: "#shop",
+                    start: "top 70%"
+                }
+            });
+        }
+    </script>
+</body>
+</html>
